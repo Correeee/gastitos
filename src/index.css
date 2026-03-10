@@ -234,7 +234,7 @@ body {
 .grid-layout {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  gap: 2.25rem;
   align-items: stretch;
 }
 
@@ -281,8 +281,8 @@ input[type="text"] {
   font-family: inherit;
   transition: var(--transition);
 }
-
-input[type="number"] {
+input[type="number"],
+.amount-wrapper input {
   padding-left: 2rem;
 }
 

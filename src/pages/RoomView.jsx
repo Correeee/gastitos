@@ -23,6 +23,7 @@ const colorPalette = [
 ];
 const getColor = (index) => colorPalette[index % colorPalette.length];
 const formatMoney = (value) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value || 0);
+const formatMoneyUSD = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value || 0);
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 
 export const RoomView = () => {
@@ -36,6 +37,11 @@ export const RoomView = () => {
   const [expenseAmount, setExpenseAmount] = useState('');
   const [loading, setLoading] = useState(true);
   const [isCreator, setIsCreator] = useState(false);
+  const [creatorId, setCreatorId] = useState(null);
+
+  const [currency, setCurrency] = useState('ARS');
+  const [usdRate, setUsdRate] = useState(null);
+  const [isLoadingUsd, setIsLoadingUsd] = useState(false);
 
   // Firestore Real-time Sync
   useEffect(() => {
@@ -89,8 +95,11 @@ export const RoomView = () => {
           setPersons(data.persons);
         }
 
-        if (data.createdBy === currentUser?.uid) {
-          setIsCreator(true);
+        if (data.createdBy) {
+          setCreatorId(data.createdBy);
+          if (data.createdBy === currentUser?.uid) {
+            setIsCreator(true);
+          }
         }
 
         if (data.expenses) setExpenses(data.expenses);
@@ -113,8 +122,8 @@ export const RoomView = () => {
     return persons.map((p, index) => {
       const salary = parseFloat(p.salary) || 0;
       const percent = totalIncome > 0 ? (salary / totalIncome) * 100 : (100 / (persons.length || 1));
-      return { 
-        ...p, 
+      return {
+        ...p,
         percent,
         color: p.color && p.color !== '#000000' ? p.color : getColor(index)
       };
@@ -180,6 +189,29 @@ export const RoomView = () => {
     saveToDB(null, newExpenses);
   };
 
+  const toggleCurrency = async () => {
+    if (currency === 'ARS') {
+      if (!usdRate) {
+        setIsLoadingUsd(true);
+        try {
+          const response = await fetch('https://dolarapi.com/v1/dolares/oficial');
+          const data = await response.json();
+          setUsdRate(data.venta);
+          setCurrency('USD');
+        } catch (error) {
+          console.error(error);
+          toast.error("Error al obtener cotización del dólar oficial");
+        } finally {
+          setIsLoadingUsd(false);
+        }
+      } else {
+        setCurrency('USD');
+      }
+    } else {
+      setCurrency('ARS');
+    }
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center">Cargando sala...</div>;
 
   return (
@@ -208,7 +240,7 @@ export const RoomView = () => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <span style={
-            isCreator ? { 
+            isCreator ? {
               fontSize: '0.75rem', fontWeight: 700, borderRadius: '12px',
               padding: '4px 12px', textTransform: 'uppercase', letterSpacing: '0.5px',
               color: '#389e0d', backgroundColor: '#f6ffed', border: '1px solid #b7eb8f'
@@ -266,11 +298,13 @@ export const RoomView = () => {
                 <div className="input-wrapper amount-wrapper">
                   <span className="currency-symbol">$</span>
                   <input
-                    type="number"
-                    value={person.salary}
-                    onChange={(e) => handleUpdatePerson(person.id, 'salary', e.target.value)}
+                    type="text"
+                    value={person.salary ? Number(person.salary).toLocaleString('es-AR') : ''}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      handleUpdatePerson(person.id, 'salary', val ? Number(val) : '');
+                    }}
                     placeholder="Sueldo"
-                    min="0" step="any"
                     readOnly={!isCreator && currentUser?.uid !== person.id}
                   />
                 </div>
@@ -325,11 +359,14 @@ export const RoomView = () => {
             <div className="input-wrapper amount-wrapper">
               <span className="currency-symbol">$</span>
               <input
-                type="number"
-                value={expenseAmount}
-                onChange={(e) => setExpenseAmount(e.target.value)}
+                type="text"
+                value={expenseAmount ? Number(expenseAmount).toLocaleString('es-AR') : ''}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setExpenseAmount(val ? Number(val) : '');
+                }}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddExpense()}
-                placeholder="0.00" min="0" step="any"
+                placeholder="0"
               />
             </div>
             <Button variant="primary" onClick={handleAddExpense}>Añadir</Button>
@@ -359,10 +396,14 @@ export const RoomView = () => {
           </div>
         </Card>
 
-        {/* Resultados Section */}
         <Card variant="dark" className="results-card">
-          <h2>Resultados Finales</h2>
-          <p className="subtitle text-gray-600">División proporcional sugerida.</p>
+          <div className="flex flex-col mb-10 gap-3">
+            <div>
+              <h2 className="m-0 mb-2">Resultados Finales</h2>
+              <p className="subtitle text-gray-600 !m-0">División proporcional sugerida.</p>
+            </div>
+
+          </div>
 
           <div className="results-grid custom-scrollbar flex-grow overflow-y-auto pr-2 mb-8 flex flex-col gap-6">
             {totalExpenses === 0 || personsWithPercent.every(p => !p.salary) ? (
@@ -387,12 +428,23 @@ export const RoomView = () => {
                           style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }}
                         />
                       )}
-                      <h3 className="text-sm text-black m-0 font-medium">
+                      <h3 className="text-sm text-black m-0 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
                         {p.name || 'Sin nombre'}
                       </h3>
+                      {p.id === creatorId && (
+                        <span style={{
+                          fontSize: '0.65rem', fontWeight: 700, borderRadius: '12px',
+                          padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '0.5px',
+                          color: '#389e0d', backgroundColor: '#f6ffed', border: '1px solid #b7eb8f',
+                        }}>
+                          Creador
+                        </span>
+                      )}
                     </div>
                     <div className="text-4xl font-medium mb-1 tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                      {formatMoney(shareAmount)}
+                      {currency === 'USD' && usdRate
+                        ? formatMoneyUSD(shareAmount / usdRate)
+                        : formatMoney(shareAmount)}
                     </div>
                     <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
                       <span style={{ color: '#ff4d4f', fontWeight: 600 }}>{p.percent.toFixed(1)}%</span> del total
@@ -401,6 +453,17 @@ export const RoomView = () => {
                 )
               })
             )}
+          </div>
+          <div className="flex justify-end">
+            <Button
+              variant="white"
+              onClick={toggleCurrency}
+              disabled={isLoadingUsd}
+              className="text-black whitespace-nowrap"
+              style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', height: 'auto', minHeight: '0' }}
+            >
+              {isLoadingUsd ? 'Cargando...' : (currency === 'ARS' ? 'Cambiar moneda a USD' : 'Volver a ARS')}
+            </Button>
           </div>
         </Card>
 

@@ -585,7 +585,7 @@ export const Dashboard = () => {
                     <div>
                       {room.isPendingForMe && <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f59e0b', display: 'block', marginBottom: '4px' }}>[Solicitud en proceso]</span>}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <h3 className="room-card-title" style={{ margin: 0 }}>{room.name}</h3>
+                        <h3 className="room-card-title" style={{ margin: 0 }}>{room.name ? room.name.charAt(0).toUpperCase() + room.name.slice(1) : ''}</h3>
                         {!room.isPendingForMe && (
                           <span style={
                             room.createdBy === currentUser.uid ? { 
