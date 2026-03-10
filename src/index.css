@@ -1,0 +1,512 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+:root {
+  --bg-color: #ffffff;
+  --text-primary: #111111;
+  --text-secondary: #565656;
+  --text-tertiary: #888888;
+
+  --card-light: #f6f6f5;
+  --card-border: #e6e6e6;
+
+  --card-dark: #111111;
+  --text-dark-primary: #ffffff;
+  --text-dark-secondary: #a0a0a0;
+
+  --accent-black: #000000;
+  --accent-white: #ffffff;
+
+  --danger: #ff4d4f;
+
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-pill: 9999px;
+  --transition: all 0.2s ease;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1.5rem;
+  box-sizing: border-box;
+}
+
+/* Global utility classes */
+.app-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.mt-auto {
+  margin-top: auto;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.empty-state {
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.text-dark-secondary {
+  color: var(--text-primary);
+}
+
+/* Scrollbars base styles used inside components */
+.custom-scrollbar {
+  scrollbar-width: thin;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #d0d0d0;
+  border-radius: 4px;
+}
+
+/* Animations base */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Fallback Dashboard Layout Classes */
+.custom-input {
+  width: 100%;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  /* gray-300 */
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  text-align: center;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.custom-input:focus {
+  border-color: var(--accent-black);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.room-card {
+  background-color: #ffffff;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-border);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: var(--transition);
+  margin-bottom: 0.75rem;
+}
+
+.room-card:hover {
+  border-color: var(--text-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.room-card-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.25rem 0;
+  font-size: 1.125rem;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+.room-card-id {
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+  font-family: monospace;
+}
+
+.room-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  /* Allow actions to wrap */
+  justify-content: flex-end;
+  /* Keep them aligned to right/flex-end even when wrapped */
+  flex-shrink: 0;
+}
+
+.dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .dashboard-grid {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .dashboard-column {
+    flex: 1;
+  }
+}
+
+.flex-col-gap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* App Header title responsive */
+@media (max-width: 600px) {
+  .app-header h1 {
+    font-size: 1.5rem !important;
+    /* Make title smaller on mobile */
+    word-break: normal;
+  }
+}
+
+/* Dashboard room cards responsive */
+@media (max-width: 500px) {
+  .room-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .room-card-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* Original Legacy CSS ported from styles.css */
+/* Grid Layout */
+.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .grid-layout {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .results-card {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Inputs */
+.input-wrapper {
+  position: relative;
+}
+
+.currency-symbol {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+  z-index: 10;
+}
+
+input[type="number"],
+input[type="text"] {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+input[type="number"] {
+  padding-left: 2rem;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--accent-black);
+  box-shadow: 0 0 0 1px var(--accent-black);
+}
+
+/* Dynamic Persons List */
+.persons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.person-item {
+  display: grid;
+  grid-template-columns: 32px 1fr 1fr 24px;
+  align-items: center;
+  gap: 0.75rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@media (max-width: 500px) {
+  .person-item {
+    /* Stack elements vertically on very small screens to avoid cutting inputs */
+    grid-template-columns: 32px 1fr 24px;
+    grid-template-rows: auto auto;
+    row-gap: 0.5rem;
+  }
+
+  .person-item .name-input {
+    grid-column: 2 / 3;
+    grid-row: 1;
+  }
+
+  .person-item .amount-wrapper {
+    grid-column: 2 / 3;
+    grid-row: 2;
+  }
+
+  .person-item>img,
+  .person-item>div:first-child {
+    grid-column: 1 / 2;
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+
+  .person-item .btn-delete,
+  .person-item>div:last-child {
+    grid-column: 3 / 4;
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+}
+
+.person-item .name-input {
+  min-width: 0;
+}
+
+.person-item .amount-wrapper {
+  min-width: 0;
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 0.25rem;
+  transition: var(--transition);
+}
+
+.btn-delete:hover {
+  color: var(--danger);
+}
+
+/* Salary Stats & Bars */
+.salary-stats {
+  padding-top: 1.5rem;
+  border-top: 1px dotted var(--card-border);
+}
+
+.stat-item {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-top: 0.25rem;
+}
+
+.bars-wrapper {
+  margin-top: 1.5rem;
+}
+
+.bars-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.bars-container {
+  height: 4px;
+  width: 100%;
+  background: #e0e0e0;
+  border-radius: 2px;
+  display: flex;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Expenses */
+.add-expense-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.expenses-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.5rem;
+  scrollbar-width: thin;
+  padding-right: 0.5rem;
+  max-height: 400px;
+}
+
+.expense-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.875rem 0;
+  border-bottom: 1px dotted var(--card-border);
+  font-size: 0.875rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.expense-item:last-child {
+  border-bottom: none;
+}
+
+.expense-info {
+  color: var(--text-primary);
+  font-weight: 400;
+}
+
+.expense-amount-del {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text-secondary);
+}
+
+.total-expenses {
+  padding-top: 1.5rem;
+  border-top: 1px dotted var(--card-border);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Results Content */
+.results-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.results-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.results-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.result-box {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px dotted rgba(255, 255, 255, 0.2);
+  animation: fadeIn 0.3s ease;
+}
+
+.result-box:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.share-amount {
+  font-size: 2.25rem;
+  font-weight: 500;
+  color: var(--text-dark-primary);
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.share-detail {
+  font-size: 0.75rem;
+  color: var(--text-dark-secondary);
+}

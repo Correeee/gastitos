@@ -1,0 +1,70 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  text-align: center;
+}
+
+.btn-primary {
+  background: var(--accent-black);
+  color: var(--accent-white);
+  border-radius: var(--radius-pill);
+  padding: 0.875rem 1.5rem;
+}
+
+.btn-primary:hover {
+  background: #222;
+}
+
+.btn-secondary {
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px dashed var(--card-border);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  width: 100%;
+}
+
+.btn-secondary:hover {
+  border-color: var(--text-tertiary);
+  color: var(--text-primary);
+  background: rgba(0,0,0,0.02);
+}
+
+.btn-white {
+  background: var(--accent-white);
+  color: var(--accent-black);
+  border-radius: var(--radius-pill);
+  padding: 0.875rem 1.5rem;
+}
+
+.btn-white:hover {
+  background: #ebebeb;
+}
+
+.btn-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 0.25rem;
+  transition: var(--transition);
+}
+
+.btn-delete:hover {
+  color: var(--danger);
+}
