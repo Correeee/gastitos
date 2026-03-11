@@ -287,16 +287,21 @@ export const Dashboard = () => {
     let membersData = [];
     let pendingData = [];
 
+    const sortAndSetRooms = () => {
+      const allRooms = [...membersData, ...pendingData].filter(r => !r.deleted);
+      allRooms.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setRecentRooms(allRooms);
+      setLoading(false);
+    };
+
     const unsubscribeMembers = onSnapshot(qMembers, (snapshot) => {
       membersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setRecentRooms([...membersData, ...pendingData].filter(r => !r.deleted));
-      setLoading(false);
+      sortAndSetRooms();
     });
 
     const unsubscribePending = onSnapshot(qPending, (snapshot) => {
       pendingData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isPendingForMe: true }));
-      setRecentRooms([...membersData, ...pendingData].filter(r => !r.deleted));
-      setLoading(false);
+      sortAndSetRooms();
     });
 
     return () => {
@@ -306,12 +311,9 @@ export const Dashboard = () => {
   }, [currentUser]);
 
   const createRoomWithName = async (roomName) => {
-    const createRoomPromise = async () => {
-      // Firebase security rules likely deny reading arbitrary rooms to check existence.
-      // Therefore, we just generate a random code and attempt to create it. 
-      // Collisions on a 6-char alphanumeric string are statistically negligible for this scope.
+    const toastId = toast.loading('Creando sala...');
+    try {
       const newRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-
       await setDoc(doc(db, 'rooms', newRoomCode), {
         name: roomName,
         createdBy: currentUser.uid,
@@ -326,21 +328,12 @@ export const Dashboard = () => {
         createdAt: new Date().toISOString(),
         calculationMode: 'equitable'
       });
-
-      return newRoomCode;
-    };
-
-    toast.promise(createRoomPromise(), {
-      loading: 'Creando sala...',
-      success: (newRoomCode) => {
-        navigate(`/room/${newRoomCode}`);
-        return `Sala creada: ${roomName}`;
-      },
-      error: (err) => {
-        console.error("Firebase Room Creation Error:", err);
-        return `Error: ${err.message || 'Hubo un error creando la sala.'}`;
-      }
-    });
+      toast.dismiss(toastId);
+      navigate(`/room/${newRoomCode}`);
+    } catch (err) {
+      console.error("Firebase Room Creation Error:", err);
+      toast.error(`Error: ${err.message || 'Hubo un error creando la sala.'}`, { id: toastId });
+    }
   };
 
   const handleCreateRoom = () => {
@@ -397,7 +390,7 @@ export const Dashboard = () => {
           </Button>
         </div>
       </div>
-    ), { duration: Infinity, style: { background: '#ffffff', color: '#111111', border: '1px solid #e5e7eb', width: '100%', maxWidth: '400px' } });
+    ), { id: 'create-room-toast', duration: Infinity, style: { background: '#ffffff', color: '#111111', border: '1px solid #e5e7eb', width: '100%', maxWidth: '400px' } });
   };
 
   const colorPalette = ['#000000', '#b0b0b0', '#565656', '#222222', '#888888', '#e6e6e6'];
@@ -482,7 +475,7 @@ export const Dashboard = () => {
             }}>Cancelar Solicitud</Button>
           </div>
         </div>
-      ), { duration: Infinity, style: { background: '#ffffff', color: '#111111', border: '1px solid #e5e7eb' } });
+      ), { id: 'cancel-request-toast', duration: Infinity, style: { background: '#ffffff', color: '#111111', border: '1px solid #e5e7eb' } });
       return;
     }
 
@@ -514,7 +507,7 @@ export const Dashboard = () => {
           </Button>
         </div>
       </div>
-    ), { duration: Infinity, style: { background: '#ffffff', color: '#111111', border: '1px solid #e5e7eb' } });
+    ), { id: 'delete-room-toast', duration: Infinity, style: { background: '#ffffff', color: '#111111', border: '1px solid #e5e7eb' } });
   };
 
   const handleShareRoom = (roomId, e) => {

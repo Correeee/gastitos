@@ -7,7 +7,7 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { RoomView } from './pages/RoomView';
 
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -27,6 +27,7 @@ const ScrollToTop = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    toast.dismiss();
   }, [pathname]);
 
   return null;
