@@ -16,6 +16,9 @@
     gap: 10px;
 }
 
+.persons-list {
+    margin-top: 10px;
+}
 
 @media screen and (max-width: 1000px) {
     .room-card {
