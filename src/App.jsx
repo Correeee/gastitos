@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Pages
@@ -12,9 +12,10 @@ import { Toaster } from 'react-hot-toast';
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
   const { currentUser } = useAuth();
+  const location = useLocation();
   
   if (!currentUser) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
   
   return children;

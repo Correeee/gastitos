@@ -3,8 +3,9 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Plus, Users, LogOut, Trash2, Share2 } from 'lucide-react';
+import { Plus, Users, LogOut, Trash2, Share2, HelpCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { HelpModal } from '../components/HelpModal';
 import { db } from '../config/firebase';
 import { collection, query, where, onSnapshot, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
 
@@ -258,6 +259,7 @@ export const Dashboard = () => {
   const [joinCode, setJoinCode] = useState('');
   const [recentRooms, setRecentRooms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -522,6 +524,25 @@ export const Dashboard = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button 
+            onClick={() => setIsHelpOpen(true)}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              cursor: 'pointer', 
+              color: '#888',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0.25rem',
+              transition: 'color 0.2s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.color = '#111'}
+            onMouseOut={(e) => e.currentTarget.style.color = '#888'}
+            title="¿Cómo funciona?"
+          >
+            <HelpCircle size={22} />
+          </button>
           <img
             src={currentUser?.photoURL || `https://ui-avatars.com/api/?name=${currentUser?.displayName?.charAt(0) || 'U'}&background=random`}
             alt="Profile"
@@ -656,6 +677,7 @@ export const Dashboard = () => {
         </div>
 
       </div>
+      <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
     </div>
   );
 };

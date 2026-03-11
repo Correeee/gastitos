@@ -1,21 +1,24 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { Button } from '../components/Button';
 import toast from 'react-hot-toast';
 
 export const Login = () => {
   const { currentUser, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = location.state?.from || '/dashboard';
 
   if (currentUser) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={from} replace />;
   }
 
   const handleGoogleLogin = async () => {
     try {
       await loginWithGoogle();
-      navigate('/dashboard');
+      navigate(from, { replace: true });
     } catch (error) {
       console.error(error);
       toast.error('Error iniciando sesión: ' + error.message);

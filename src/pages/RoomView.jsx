@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Trash2, Plus, Share2, LogOut } from 'lucide-react';
+import { Trash2, Plus, Share2, LogOut, HelpCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { HelpModal } from '../components/HelpModal';
 import { db } from '../config/firebase';
 import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import '../App.css';
@@ -42,6 +43,7 @@ export const RoomView = () => {
   const [currency, setCurrency] = useState('ARS');
   const [usdRate, setUsdRate] = useState(null);
   const [isLoadingUsd, setIsLoadingUsd] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   // Firestore Real-time Sync
   useEffect(() => {
@@ -159,16 +161,21 @@ export const RoomView = () => {
   const handleRemovePerson = async (id) => {
     // Prevent removing the last person
     if (persons.length <= 1) return;
+    
+    // Generamos el nuevo array de personas sin la que queremos eliminar
     const newPersons = persons.filter(p => p.id !== id).map((p, idx) => ({ ...p, color: getColor(idx) }));
     setPersons(newPersons); // Optimistic UI
 
     try {
+      // Necesitamos eliminar a la persona tanto del arreglo 'persons' como del arreglo 'members'
       await updateDoc(doc(db, 'rooms', roomId), {
         persons: newPersons,
         members: arrayRemove(id)
       });
+      toast.success('Persona eliminada de la sala');
     } catch (e) {
       console.error("Error removing person:", e);
+      toast.error('Error al eliminar a la persona');
     }
   };
 
@@ -224,6 +231,25 @@ export const RoomView = () => {
 
           {currentUser && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <button 
+                onClick={() => setIsHelpOpen(true)}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: 'pointer', 
+                  color: '#888',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0.25rem',
+                  transition: 'color 0.2s ease'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.color = '#111'}
+                onMouseOut={(e) => e.currentTarget.style.color = '#888'}
+                title="¿Cómo funciona?"
+              >
+                <HelpCircle size={22} />
+              </button>
               <img
                 src={currentUser?.photoURL || `https://ui-avatars.com/api/?name=${currentUser?.displayName?.charAt(0) || 'U'}&background=random`}
                 alt="Profile"
@@ -468,6 +494,7 @@ export const RoomView = () => {
         </Card>
 
       </main>
+      <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
     </div>
   );
 };
