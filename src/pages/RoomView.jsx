@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Trash2, Plus, Share2, LogOut, HelpCircle } from 'lucide-react';
+import { Trash2, Plus, Share2, LogOut, HelpCircle, Menu, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { HelpModal } from '../components/HelpModal';
 import { db } from '../config/firebase';
@@ -46,6 +46,7 @@ export const RoomView = () => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [roomName, setRoomName] = useState('');
   const [calculationMode, setCalculationMode] = useState('equitable');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Firestore Real-time Sync
   useEffect(() => {
@@ -251,14 +252,15 @@ export const RoomView = () => {
 
   return (
     <div className="app-container">
-      <header className="app-header mb-8">
+      <header className="app-header mb-8 relative">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <Button variant="secondary" className="!w-auto !py-2 !px-4" onClick={() => navigate('/dashboard')}>
             ← Volver a Salas
           </Button>
 
+          {/* Desktop Header Actions */}
           {currentUser && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <div className="hidden md:flex" style={{ alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <button
                 onClick={() => setIsHelpOpen(true)}
                 style={{
@@ -290,9 +292,29 @@ export const RoomView = () => {
               </Button>
             </div>
           )}
+
+          {/* Mobile Header Menu Toggle */}
+          {currentUser && (
+            <div className="md:hidden flex items-center gap-3">
+              <img
+                src={currentUser?.photoURL || `https://ui-avatars.com/api/?name=${currentUser?.displayName?.charAt(0) || 'U'}&background=random`}
+                alt="Profile"
+                style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid #e5e7eb', objectFit: 'cover' }}
+                onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${currentUser?.displayName?.charAt(0) || 'U'}&background=random`; }}
+              />
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', display: 'flex' }}
+                title="Menú"
+              >
+                {isMobileMenuOpen ? <X size={24} color="#111" /> : <Menu size={24} color="#111" />}
+              </button>
+            </div>
+          )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+        {/* Desktop Badges and Share Actions */}
+        <div className="hidden md:flex items-center gap-4 mb-4 flex-wrap">
           <span style={
             isCreator ? {
               fontSize: '0.75rem', fontWeight: 700, borderRadius: '12px',
@@ -316,6 +338,40 @@ export const RoomView = () => {
             <Share2 size={16} style={{ display: 'inline', marginRight: '8px' }} /> Compartir
           </Button>
         </div>
+
+        {/* Mobile Dropdown Menu (for RoomView includes Share & Badges) */}
+        {isMobileMenuOpen && (
+          <div className="absolute menu-mobile top-[60px] right-0 mt-2 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 p-2 flex flex-col gap-1 z-50 min-w-[200px] md:hidden">
+            <div className="p-3 bg-gray-50 rounded-lg flex flex-col gap-2 mb-1">
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: isCreator ? '#389e0d' : '#d46b08' }}>
+                {isCreator ? 'Creador' : 'Invitado'} • SALA: {roomId}
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(`${window.location.origin}/room/${roomId}`);
+                toast.success('¡Enlace copiado!');
+                setIsMobileMenuOpen(false);
+              }}
+              className="flex items-center gap-3 w-full text-left font-medium text-sm text-gray-700 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <Share2 size={18} /> Compartir Sala
+            </button>
+            <div className="h-px bg-gray-100 my-1"></div>
+            <button
+              onClick={() => { setIsHelpOpen(true); setIsMobileMenuOpen(false); }}
+              className="flex items-center gap-3 w-full text-left font-medium text-sm text-gray-700 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <HelpCircle size={18} /> ¿Cómo funciona?
+            </button>
+            <button
+              onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+              className="flex items-center gap-3 w-full text-left font-medium text-sm text-red-600 p-3 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <LogOut size={18} /> Cerrar Sesión
+            </button>
+          </div>
+        )}
 
         <h1 className="text-3xl font-medium tracking-tight mb-2">{roomName ? (roomName.charAt(0).toUpperCase() + roomName.slice(1)) : 'División de Gastos'}</h1>
         <p>Calculadora de gastos compartidos proporcionales</p>

@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Plus, Users, LogOut, Trash2, Share2, HelpCircle } from 'lucide-react';
+import { Plus, Users, LogOut, Trash2, Share2, HelpCircle, Menu, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { HelpModal } from '../components/HelpModal';
 import { db } from '../config/firebase';
@@ -260,6 +260,7 @@ export const Dashboard = () => {
   const [recentRooms, setRecentRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Check if the user has seen the help modal before
@@ -536,13 +537,14 @@ export const Dashboard = () => {
 
   return (
     <div className="app-container">
-      <header className="app-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <header className="app-header relative" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 className="text-3xl font-medium tracking-tight mb-2" style={{ margin: 0, fontSize: '1.875rem' }}>¡Hola, {currentUser?.displayName?.split(' ')[0]}!</h1>
           <p className="subtitle !mb-0 text-gray-400" style={{ margin: 0 }}>Tus salas de división activa.</p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        {/* Desktop Header Actions */}
+        <div className="hidden md:flex" style={{ alignItems: 'center', gap: '1rem' }}>
           <button
             onClick={() => setIsHelpOpen(true)}
             style={{
@@ -572,6 +574,42 @@ export const Dashboard = () => {
             <LogOut size={16} style={{ display: 'inline', marginRight: '8px' }} /> Salir
           </Button>
         </div>
+
+        {/* Mobile Header Menu Toggle */}
+        <div className="md:hidden flex items-center gap-3">
+          <img
+            src={currentUser?.photoURL || `https://ui-avatars.com/api/?name=${currentUser?.displayName?.charAt(0) || 'U'}&background=random`}
+            alt="Profile"
+            style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid #e5e7eb', objectFit: 'cover' }}
+            onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${currentUser?.displayName?.charAt(0) || 'U'}&background=random`; }}
+          />
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', display: 'flex' }}
+            title="Menú"
+          >
+            {isMobileMenuOpen ? <X size={24} color="#111" /> : <Menu size={24} color="#111" />}
+          </button>
+        </div>
+
+        {/* Mobile Dropdown Menu */}
+        {isMobileMenuOpen && (
+          <div className="absolute menu-mobile top-full right-0 mt-2 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 p-2 flex flex-col gap-1 z-50 min-w-[200px] md:hidden">
+            <button
+              onClick={() => { setIsHelpOpen(true); setIsMobileMenuOpen(false); }}
+              className="flex items-center gap-3 w-full text-left text-sm font-medium text-gray-700 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <HelpCircle size={18} /> ¿Cómo funciona?
+            </button>
+            <div className="h-px bg-gray-100 my-1"></div>
+            <button
+              onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+              className="flex items-center gap-3 w-full text-left text-sm font-medium text-red-600 p-3 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <LogOut size={18} /> Cerrar Sesión
+            </button>
+          </div>
+        )}
       </header>
 
       <div className="dashboard-grid">
