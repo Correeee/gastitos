@@ -29,12 +29,11 @@ export const Login = () => {
     <div style={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: '100%', maxWidth: '400px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2.5rem' }}>
-          <img src="/favicon.png" alt="Gastitos Logo" style={{ width: '120px', height: '120px', marginBottom: '1.25rem', objectFit: 'contain' }} />
-          <h1 style={{ fontSize: '2.25rem', fontWeight: '700', color: '#111111', letterSpacing: '-0.025em', margin: '0 0 0.5rem 0' }}>Gastitos</h1>
-          <p style={{ fontSize: '1rem', color: '#565656', margin: 0, textAlign: 'center', lineHeight: '1.5' }}>
-            La forma más <strong>inteligente</strong> de dividir los gastos.<br />
+          <img className='logo__loggin' src="/favicon.png" alt="Gastitos Logo" style={{ width: '150px', height: '150px', marginBottom: '1.25rem', objectFit: 'contain' }} />
+          <h1 style={{ fontSize: '1rem', fontWeight: '400', color: '#565656', margin: 0, textAlign: 'center', lineHeight: '1.5', letterSpacing: 'normal' }}>
+            <strong style={{ color: '#111111', fontWeight: '700' }}>Gastitos</strong> es la forma más <strong>inteligente</strong> de dividir los gastos.<br />
             Cuentas <strong>claras</strong>, en partes <strong>iguales</strong> o <strong>proporcionales</strong> a tu sueldo.
-          </p>
+          </h1>
         </div>
         <button
           onClick={loginWithGoogle}

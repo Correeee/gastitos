@@ -60,4 +60,13 @@
         align-items: flex-start;
         gap: 10px;
     }
+
+
+}
+
+@media screen and (max-width: 525px) {
+    .logo__loggin {
+        width: 140px !important;
+        height: 140px !important;
+    }
 }
