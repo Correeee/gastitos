@@ -262,6 +262,15 @@ export const Dashboard = () => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   useEffect(() => {
+    // Check if the user has seen the help modal before
+    const hasSeenHelp = localStorage.getItem('hasSeenGastitosHelp');
+    if (!hasSeenHelp) {
+      setIsHelpOpen(true);
+      localStorage.setItem('hasSeenGastitosHelp', 'true');
+    }
+  }, []);
+
+  useEffect(() => {
     if (!currentUser) return;
 
     const qMembers = query(
