@@ -44,6 +44,8 @@ export const RoomView = () => {
   const [usdRate, setUsdRate] = useState(null);
   const [isLoadingUsd, setIsLoadingUsd] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [roomName, setRoomName] = useState('');
+  const [calculationMode, setCalculationMode] = useState('equitable');
 
   // Firestore Real-time Sync
   useEffect(() => {
@@ -97,11 +99,21 @@ export const RoomView = () => {
           setPersons(data.persons);
         }
 
+        if (data.calculationMode) {
+          setCalculationMode(data.calculationMode);
+        } else {
+          setCalculationMode('equitable');
+        }
+
         if (data.createdBy) {
           setCreatorId(data.createdBy);
           if (data.createdBy === currentUser?.uid) {
             setIsCreator(true);
           }
+        }
+
+        if (data.name) {
+          setRoomName(data.name);
         }
 
         if (data.expenses) setExpenses(data.expenses);
@@ -122,15 +134,20 @@ export const RoomView = () => {
 
   const personsWithPercent = useMemo(() => {
     return persons.map((p, index) => {
-      const salary = parseFloat(p.salary) || 0;
-      const percent = totalIncome > 0 ? (salary / totalIncome) * 100 : (100 / (persons.length || 1));
+      let percent;
+      if (calculationMode === 'equal') {
+        percent = 100 / (persons.length || 1);
+      } else {
+        const salary = parseFloat(p.salary) || 0;
+        percent = totalIncome > 0 ? (salary / totalIncome) * 100 : (100 / (persons.length || 1));
+      }
       return {
         ...p,
         percent,
         color: p.color && p.color !== '#000000' ? p.color : getColor(index)
       };
     });
-  }, [persons, totalIncome]);
+  }, [persons, totalIncome, calculationMode]);
 
   // Sync to database helper
   const saveToDB = async (newPersons, newExpenses) => {
@@ -145,6 +162,17 @@ export const RoomView = () => {
   };
 
   // Handlers
+  const handleCalculationModeChange = async (mode) => {
+    if (mode === calculationMode) return;
+    setCalculationMode(mode);
+    try {
+      await updateDoc(doc(db, 'rooms', roomId), { calculationMode: mode });
+    } catch (e) {
+      console.error("Error saving calculation mode:", e);
+      toast.error('Error al cambiar modo de cálculo');
+    }
+  };
+
   const handleAddPerson = () => {
     // This is kept for manual additions if needed, but normally handled by joining
     const newPersons = [...persons, { id: generateId(), name: `Persona ${persons.length + 1}`, salary: '', color: getColor(persons.length) }];
@@ -161,7 +189,7 @@ export const RoomView = () => {
   const handleRemovePerson = async (id) => {
     // Prevent removing the last person
     if (persons.length <= 1) return;
-    
+
     // Generamos el nuevo array de personas sin la que queremos eliminar
     const newPersons = persons.filter(p => p.id !== id).map((p, idx) => ({ ...p, color: getColor(idx) }));
     setPersons(newPersons); // Optimistic UI
@@ -231,12 +259,12 @@ export const RoomView = () => {
 
           {currentUser && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <button 
+              <button
                 onClick={() => setIsHelpOpen(true)}
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  cursor: 'pointer', 
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
                   color: '#888',
                   display: 'flex',
                   alignItems: 'center',
@@ -289,7 +317,7 @@ export const RoomView = () => {
           </Button>
         </div>
 
-        <h1 className="text-3xl font-medium tracking-tight mb-2">División de Gastos</h1>
+        <h1 className="text-3xl font-medium tracking-tight mb-2">{roomName ? (roomName.charAt(0).toUpperCase() + roomName.slice(1)) : 'División de Gastos'}</h1>
         <p>Calculadora de gastos compartidos proporcionales</p>
       </header>
 
@@ -297,10 +325,45 @@ export const RoomView = () => {
 
         {/* Ingresos Section */}
         <Card variant="light">
-          <h2>Ingresos Mensuales</h2>
-          <p className="subtitle">Las personas unidas aparecen automáticamente aquí.</p>
+          <div className="flex justify-between items-start mb-2 gap-4 flex-wrap">
+            <div className="flex gap-2">
+              <div className="relative group flex">
+                <Button
+                  variant={calculationMode === 'equitable' ? 'primary' : 'secondary'}
+                  onClick={() => isCreator && handleCalculationModeChange('equitable')}
+                  disabled={!isCreator}
+                  style={{ padding: '0.5rem 1rem' }}
+                >
+                  Equitativo
+                </Button>
+                <div className="absolute tooltip top-full left-1/2 -translate-x-1/2 mt-3 w-max max-w-[200px] px-3 py-2 bg-black text-white text-xs rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 text-center pointer-events-none
+                after:content-[''] after:absolute after:bottom-full after:left-1/2 after:-translate-x-1/2 after:border-[6px] after:border-solid after:border-transparent after:border-b-black">
+                  División proporcional basada en el sueldo
+                </div>
+              </div>
+              <div className="relative group flex">
+                <Button
+                  variant={calculationMode === 'equal' ? 'primary' : 'secondary'}
+                  onClick={() => isCreator && handleCalculationModeChange('equal')}
+                  disabled={!isCreator}
+                  style={{ padding: '0.5rem 1rem' }}
+                >
+                  50/50
+                </Button>
+                <div className="absolute tooltip top-full left-1/2 -translate-x-1/2 mt-3 w-max px-3 py-2 bg-black text-white text-xs rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 text-center pointer-events-none
+                after:content-[''] after:absolute after:bottom-full after:left-1/2 after:-translate-x-1/2 after:border-[6px] after:border-solid after:border-transparent after:border-b-black">
+                  División en partes iguales
+                </div>
+              </div>
+            </div>
+            <div>
+              <h2 className="!mb-1">Ingresos Mensuales</h2>
+              <p className="subtitle !m-0">Las personas unidas aparecen automáticamente aquí.</p>
+            </div>
 
-          <div className="persons-list custom-scrollbar">
+          </div>
+
+          <div className="persons-list custom-scrollbar mt-4">
             {personsWithPercent.map((person, index) => (
               <div key={person.id} className="person-item animate-fade-in">
                 {person.photoURL ? (
@@ -321,19 +384,21 @@ export const RoomView = () => {
                   placeholder={`Persona ${index + 1}`}
                   readOnly={!isCreator && currentUser?.uid !== person.id}
                 />
-                <div className="input-wrapper amount-wrapper">
-                  <span className="currency-symbol">$</span>
-                  <input
-                    type="text"
-                    value={person.salary ? Number(person.salary).toLocaleString('es-AR') : ''}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      handleUpdatePerson(person.id, 'salary', val ? Number(val) : '');
-                    }}
-                    placeholder="Sueldo"
-                    readOnly={!isCreator && currentUser?.uid !== person.id}
-                  />
-                </div>
+                {calculationMode === 'equitable' && (
+                  <div className="input-wrapper amount-wrapper">
+                    <span className="currency-symbol">$</span>
+                    <input
+                      type="text"
+                      value={person.salary ? Number(person.salary).toLocaleString('es-AR') : ''}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        handleUpdatePerson(person.id, 'salary', val ? Number(val) : '');
+                      }}
+                      placeholder="Sueldo"
+                      readOnly={!isCreator && currentUser?.uid !== person.id}
+                    />
+                  </div>
+                )}
                 {isCreator && currentUser?.uid !== person.id ? (
                   <button className="btn-delete" onClick={() => handleRemovePerson(person.id)} title="Eliminar persona">
                     <Trash2 size={18} />
@@ -346,10 +411,12 @@ export const RoomView = () => {
           </div>
 
           <div className="salary-stats mt-auto">
-            <div className="stat-item flex justify-between mb-4">
-              <span className="stat-label">Ingreso Total</span>
-              <span className="stat-value font-medium text-xl">{formatMoney(totalIncome)}</span>
-            </div>
+            {calculationMode === 'equitable' && (
+              <div className="stat-item flex justify-between mb-4">
+                <span className="stat-label">Ingreso Total</span>
+                <span className="stat-value font-medium text-xl">{formatMoney(totalIncome)}</span>
+              </div>
+            )}
 
             <div className="bars-wrapper">
               <div className="bars-labels flex flex-wrap gap-4 text-xs text-gray-600 mb-2">
@@ -432,8 +499,8 @@ export const RoomView = () => {
           </div>
 
           <div className="results-grid custom-scrollbar flex-grow overflow-y-auto pr-2 mb-8 flex flex-col gap-6">
-            {totalExpenses === 0 || personsWithPercent.every(p => !p.salary) ? (
-              <div className="empty-state text-gray-700">Añade sueldos y gastos para ver los resultados.</div>
+            {totalExpenses === 0 || (calculationMode === 'equitable' && personsWithPercent.every(p => !p.salary)) ? (
+              <div className="empty-state text-gray-700">Añade {calculationMode === 'equitable' ? 'sueldos y ' : ''}gastos para ver los resultados.</div>
             ) : (
               personsWithPercent.map(p => {
                 const shareAmount = totalExpenses * (p.percent / 100);

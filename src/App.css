@@ -1,1 +1,26 @@
 /* App specific styles (moved to index.css and Tailwind) */
+.tooltip {
+    padding: 8px;
+    margin-top: 5px;
+    background-color: var(--text-primary);
+}
+
+.result-box {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.room-card {
+    align-items: start;
+    gap: 10px;
+}
+
+
+@media screen and (max-width: 1000px) {
+    .room-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}

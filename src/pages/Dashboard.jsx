@@ -18,24 +18,24 @@ const RoomMembersToast = ({ t, room, currentUser }) => {
     const usersData = (room.members || []).map(uid => {
       const personData = (room.persons || []).find(p => p.id === uid);
       const isMe = uid === currentUser.uid;
-      
+
       let displayName = personData?.name?.trim();
-      
+
       if (!displayName || displayName.toLowerCase() === 'sin nombre') {
-         if (isMe) {
-            displayName = currentUser.email || 'Tú';
-         } else {
-            displayName = `Usuario ${uid.substring(0, 4)}`;
-         }
+        if (isMe) {
+          displayName = currentUser.email || 'Tú';
+        } else {
+          displayName = `Usuario ${uid.substring(0, 4)}`;
+        }
       }
-      
+
       let photoURL = personData?.photoURL;
       if (!photoURL) {
-         if (isMe) {
-            photoURL = currentUser.photoURL || `https://ui-avatars.com/api/?name=${displayName.charAt(0)}&background=random`;
-         } else {
-            photoURL = `https://ui-avatars.com/api/?name=${displayName.charAt(0)}&background=random`;
-         }
+        if (isMe) {
+          photoURL = currentUser.photoURL || `https://ui-avatars.com/api/?name=${displayName.charAt(0)}&background=random`;
+        } else {
+          photoURL = `https://ui-avatars.com/api/?name=${displayName.charAt(0)}&background=random`;
+        }
       }
 
       return {
@@ -72,7 +72,7 @@ const RoomMembersToast = ({ t, room, currentUser }) => {
         toast.dismiss(t.id);
       }
     };
-    
+
     // Use timeout to prevent immediate dismissal from the click that opened the toast
     setTimeout(() => {
       document.addEventListener('mousedown', handleClickOutside);
@@ -86,40 +86,40 @@ const RoomMembersToast = ({ t, room, currentUser }) => {
 
 
   const handleKick = async (uid) => {
-     toast((tConfirm) => (
-       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0.5rem' }}>
-         <p style={{ margin: 0, fontWeight: 500 }}>¿Seguro que deseas eliminar a este usuario de la sala?</p>
-         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-           <Button variant="secondary" style={{ padding: '0.5rem 1rem', width: 'auto' }} onClick={() => toast.dismiss(tConfirm.id)}>Cancelar</Button>
-           <Button style={{ padding: '0.5rem 1rem', width: 'auto', backgroundColor: '#ff4d4f', color: 'white', border: 'none' }} onClick={async () => {
-             toast.dismiss(tConfirm.id);
-             try {
-                const newMembers = room.members.filter(id => id !== uid);
-                const newPersons = (room.persons || []).filter(p => p.id !== uid);
-                await updateDoc(doc(db, 'rooms', room.id), { 
-                  members: newMembers,
-                  persons: newPersons
-                });
-                toast.success("Usuario eliminado");
-             } catch(e) {
-                console.error("Error kicking user", e);
-                toast.error("Error al eliminar usuario");
-             }
-           }}>Eliminar</Button>
-         </div>
-       </div>
-     ), { duration: Infinity, style: { background: '#ffffff', color: '#111111', border: '1px solid #e5e7eb' } });
+    toast((tConfirm) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0.5rem' }}>
+        <p style={{ margin: 0, fontWeight: 500 }}>¿Seguro que deseas eliminar a este usuario de la sala?</p>
+        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+          <Button variant="secondary" style={{ padding: '0.5rem 1rem', width: 'auto' }} onClick={() => toast.dismiss(tConfirm.id)}>Cancelar</Button>
+          <Button style={{ padding: '0.5rem 1rem', width: 'auto', backgroundColor: '#ff4d4f', color: 'white', border: 'none' }} onClick={async () => {
+            toast.dismiss(tConfirm.id);
+            try {
+              const newMembers = room.members.filter(id => id !== uid);
+              const newPersons = (room.persons || []).filter(p => p.id !== uid);
+              await updateDoc(doc(db, 'rooms', room.id), {
+                members: newMembers,
+                persons: newPersons
+              });
+              toast.success("Usuario eliminado");
+            } catch (e) {
+              console.error("Error kicking user", e);
+              toast.error("Error al eliminar usuario");
+            }
+          }}>Eliminar</Button>
+        </div>
+      </div>
+    ), { duration: Infinity, style: { background: '#ffffff', color: '#111111', border: '1px solid #e5e7eb' } });
   };
 
   const handleApprove = async (pendingUser) => {
     try {
       const roomRef = doc(db, 'rooms', room.id);
-      
+
       // We must query the current room state to determine the appropriate color index for the new person
       const roomSnap = await getDoc(roomRef);
       const currentData = roomSnap.data();
       const currentPersonsLength = currentData.persons?.length || 0;
-      
+
       const colorPalette = ['#000000', '#b0b0b0', '#565656', '#222222', '#888888', '#e6e6e6'];
       const personData = {
         ...pendingUser,
@@ -145,22 +145,22 @@ const RoomMembersToast = ({ t, room, currentUser }) => {
   };
 
   const handleReject = async (pendingUserId) => {
-     try {
-       const roomRef = doc(db, 'rooms', room.id);
-       const roomSnap = await getDoc(roomRef);
-       const currentData = roomSnap.data();
-       const newPending = (currentData.pendingMembers || []).filter(p => p.id !== pendingUserId);
-       
-       await updateDoc(roomRef, {
-         pendingMembers: newPending,
-         pendingUids: arrayRemove(pendingUserId)
-       });
-       toast.success("Solicitud rechazada");
-       toast.dismiss(t.id);
-     } catch (error) {
-       console.error("Error rejecting user:", error);
-       toast.error("Error al rechazar usuario");
-     }
+    try {
+      const roomRef = doc(db, 'rooms', room.id);
+      const roomSnap = await getDoc(roomRef);
+      const currentData = roomSnap.data();
+      const newPending = (currentData.pendingMembers || []).filter(p => p.id !== pendingUserId);
+
+      await updateDoc(roomRef, {
+        pendingMembers: newPending,
+        pendingUids: arrayRemove(pendingUserId)
+      });
+      toast.success("Solicitud rechazada");
+      toast.dismiss(t.id);
+    } catch (error) {
+      console.error("Error rejecting user:", error);
+      toast.error("Error al rechazar usuario");
+    }
   };
 
   const isCreator = currentUser.uid === room.createdBy;
@@ -168,43 +168,43 @@ const RoomMembersToast = ({ t, room, currentUser }) => {
   return (
     <div id={`room-members-toast-${t.id}`} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0.5rem', minWidth: '250px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-         <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Miembros ({room.members?.length || 0})</h3>
-         <button onClick={() => toast.dismiss(t.id)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>&times;</button>
+        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Miembros ({room.members?.length || 0})</h3>
+        <button onClick={() => toast.dismiss(t.id)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>&times;</button>
       </div>
-      
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '250px', overflowY: 'auto' }}>
-        {loading ? <p style={{ fontSize: '0.875rem', color: '#666' }}>Cargando usuarios...</p> : 
+        {loading ? <p style={{ fontSize: '0.875rem', color: '#666' }}>Cargando usuarios...</p> :
           users.map(u => (
             <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <img 
-                    src={u.photoURL} 
-                    alt={u.displayName} 
-                    style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} 
-                    onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${u.displayName.charAt(0)}&background=random`; }}
-                  />
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{u.displayName} {u.isMe && <span style={{ fontSize: '0.75rem', color: '#888', marginLeft: '4px' }}>(Tú)</span>}</span>
-                    {u.id === room.createdBy && (
-                      <span style={{ 
-                        fontSize: '0.65rem', fontWeight: 700, borderRadius: '8px',
-                        padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '0.5px',
-                        color: '#389e0d', backgroundColor: '#f6ffed', border: '1px solid #b7eb8f'
-                      }}>
-                        Creador
-                      </span>
-                    )}
-                  </div>
-               </div>
-               {!u.isMe && isCreator && (
-                 <button 
-                   onClick={() => handleKick(u.id)}
-                   style={{ background: 'none', border: 'none', padding: '0.25rem', color: '#ff4d4f', cursor: 'pointer' }}
-                   title="Eliminar usuario"
-                 >
-                   <Trash2 size={16} />
-                 </button>
-               )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <img
+                  src={u.photoURL}
+                  alt={u.displayName}
+                  style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
+                  onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${u.displayName.charAt(0)}&background=random`; }}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{u.displayName} {u.isMe && <span style={{ fontSize: '0.75rem', color: '#888', marginLeft: '4px' }}>(Tú)</span>}</span>
+                  {u.id === room.createdBy && (
+                    <span style={{
+                      fontSize: '0.65rem', fontWeight: 700, borderRadius: '8px',
+                      padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '0.5px',
+                      color: '#389e0d', backgroundColor: '#f6ffed', border: '1px solid #b7eb8f'
+                    }}>
+                      Creador
+                    </span>
+                  )}
+                </div>
+              </div>
+              {!u.isMe && isCreator && (
+                <button
+                  onClick={() => handleKick(u.id)}
+                  style={{ background: 'none', border: 'none', padding: '0.25rem', color: '#ff4d4f', cursor: 'pointer' }}
+                  title="Eliminar usuario"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
             </div>
           ))
         }
@@ -220,23 +220,23 @@ const RoomMembersToast = ({ t, room, currentUser }) => {
             {room.pendingMembers.map(pending => (
               <div key={pending.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fef3c7', padding: '0.5rem', borderRadius: '8px', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden', marginRight: '0.5rem' }}>
-                    <img 
-                      src={pending.photoURL} 
-                      alt={pending.name} 
-                      style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} 
-                      onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${pending.name ? pending.name.charAt(0) : 'U'}&background=random`; }}
-                    />
-                    <span style={{ fontSize: '0.875rem', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pending.name}</span>
+                  <img
+                    src={pending.photoURL}
+                    alt={pending.name}
+                    style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                    onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${pending.name ? pending.name.charAt(0) : 'U'}&background=random`; }}
+                  />
+                  <span style={{ fontSize: '0.875rem', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pending.name}</span>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-                  <button 
+                  <button
                     onClick={() => handleApprove(pending)}
                     style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                     title="Aceptar"
                   >
                     ✓
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleReject(pending.id)}
                     style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                     title="Rechazar"
@@ -277,7 +277,7 @@ export const Dashboard = () => {
       collection(db, 'rooms'),
       where('members', 'array-contains', currentUser.uid)
     );
-    
+
     const qPending = query(
       collection(db, 'rooms'),
       where('pendingUids', 'array-contains', currentUser.uid)
@@ -322,9 +322,10 @@ export const Dashboard = () => {
           salary: '',
           color: '#000000'
         }],
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        calculationMode: 'equitable'
       });
-      
+
       return newRoomCode;
     };
 
@@ -349,11 +350,16 @@ export const Dashboard = () => {
           id="new-room-input"
           className="custom-input"
           style={{ padding: '0.75rem', fontSize: '1rem', textTransform: 'none', letterSpacing: 'normal' }}
-          placeholder="Ej: Viaje a Brasil"
+          placeholder="Ej: Gastos - Marzo 2026"
+          maxLength={20}
           autoFocus
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               const val = e.target.value.trim();
+              if (val.length > 20) {
+                toast.error("El nombre no puede tener más de 30 caracteres", { id: 'too-long-name' });
+                return;
+              }
               if (val) {
                 toast.dismiss(t.id);
                 createRoomWithName(val);
@@ -376,6 +382,10 @@ export const Dashboard = () => {
               const val = document.getElementById('new-room-input')?.value.trim();
               if (!val) {
                 toast.error("Coloca un nombre por favor", { id: 'empty-name' });
+                return;
+              }
+              if (val.length > 20) {
+                toast.error("El nombre no puede tener más de 20 caracteres", { id: 'too-long-name' });
                 return;
               }
               toast.dismiss(t.id);
@@ -402,7 +412,7 @@ export const Dashboard = () => {
 
       if (roomSnap.exists()) {
         const data = roomSnap.data();
-        
+
         // If the user created it or is already in the members list, let them right in
         if (data.createdBy === currentUser.uid || data.members?.includes(currentUser.uid)) {
           navigate(`/room/${code}`);
@@ -411,14 +421,14 @@ export const Dashboard = () => {
 
         // Check if user is already pending
         const isPending = data.pendingMembers?.some(p => p.id === currentUser.uid);
-        
+
         if (!isPending) {
           const newPendingData = {
             id: currentUser.uid,
             name: currentUser.displayName?.split(' ')[0] || 'Usuario',
             photoURL: currentUser.photoURL || `https://ui-avatars.com/api/?name=${currentUser.displayName?.charAt(0) || 'U'}&background=random`
           };
-          
+
           await updateDoc(roomRef, {
             pendingMembers: arrayUnion(newPendingData),
             pendingUids: arrayUnion(currentUser.uid)
@@ -427,7 +437,7 @@ export const Dashboard = () => {
           // Find creator's name from the persons array
           const creatorData = data.persons?.find(p => p.id === data.createdBy);
           const creatorName = creatorData ? creatorData.name : 'el creador';
-          
+
           toast.success(`Solicitud de acceso enviada a ${creatorName}, espere a ser aceptado.`, { duration: 5000 });
         } else {
           toast.success("Tu solicitud ya está pendiente de aprobación.");
@@ -458,7 +468,7 @@ export const Dashboard = () => {
                 const roomSnap = await getDoc(roomRef);
                 const currentData = roomSnap.data();
                 const newPending = (currentData.pendingMembers || []).filter(p => p.id !== currentUser.uid);
-                
+
                 await updateDoc(roomRef, {
                   pendingMembers: newPending,
                   pendingUids: arrayRemove(currentUser.uid)
@@ -514,12 +524,12 @@ export const Dashboard = () => {
 
   const handleViewUsers = async (room, e) => {
     e.stopPropagation();
-    
+
     toast((t) => (
-      <RoomMembersToast 
-        t={t} 
+      <RoomMembersToast
+        t={t}
         room={room}
-        currentUser={currentUser} 
+        currentUser={currentUser}
       />
     ), { duration: Infinity, style: { background: '#ffffff', color: '#111111', border: '1px solid #e5e7eb', width: '100%', maxWidth: '350px' } });
   };
@@ -533,12 +543,12 @@ export const Dashboard = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <button 
+          <button
             onClick={() => setIsHelpOpen(true)}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              cursor: 'pointer', 
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
               color: '#888',
               display: 'flex',
               alignItems: 'center',
@@ -618,7 +628,7 @@ export const Dashboard = () => {
                         <h3 className="room-card-title" style={{ margin: 0 }}>{room.name ? room.name.charAt(0).toUpperCase() + room.name.slice(1) : ''}</h3>
                         {!room.isPendingForMe && (
                           <span style={
-                            room.createdBy === currentUser.uid ? { 
+                            room.createdBy === currentUser.uid ? {
                               fontSize: '0.7rem', fontWeight: 600, borderRadius: '12px',
                               padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '0.5px',
                               color: '#389e0d', backgroundColor: '#f6ffed', border: '1px solid #b7eb8f'
@@ -632,7 +642,9 @@ export const Dashboard = () => {
                           </span>
                         )}
                       </div>
-                      <span className="room-card-id" style={{ display: 'block' }}>ID: {room.id}</span>
+                      <span className="room-card-id" style={{ display: 'block', color: '#888' }}>
+                        ID: <span style={{ color: '#f97316', fontFamily: 'monospace', marginLeft: '4px', letterSpacing: '0.5px' }}>{room.id}</span>
+                      </span>
                       {room.createdAt && (
                         <span style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginTop: '4px' }}>
                           Creada el {new Date(room.createdAt).toLocaleDateString('es-AR')}
@@ -648,15 +660,15 @@ export const Dashboard = () => {
                               <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>{room.members?.length || 1}</span>
                             </Button>
                             {room.createdBy === currentUser.uid && room.pendingMembers && room.pendingMembers.length > 0 && (
-                              <div style={{ 
-                                position: 'absolute', 
-                                top: '-5px', 
-                                right: '-5px', 
-                                backgroundColor: '#ff4d4f', 
-                                color: 'white', 
-                                fontSize: '0.7rem', 
-                                fontWeight: 'bold', 
-                                borderRadius: '10px', 
+                              <div style={{
+                                position: 'absolute',
+                                top: '-5px',
+                                right: '-5px',
+                                backgroundColor: '#ff4d4f',
+                                color: 'white',
+                                fontSize: '0.7rem',
+                                fontWeight: 'bold',
+                                borderRadius: '10px',
                                 padding: '2px 6px',
                                 minWidth: '20px',
                                 textAlign: 'center',

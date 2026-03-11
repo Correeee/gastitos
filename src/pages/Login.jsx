@@ -32,8 +32,8 @@ export const Login = () => {
           <img src="/favicon.png" alt="Gastitos Logo" style={{ width: '120px', height: '120px', marginBottom: '1.25rem', objectFit: 'contain' }} />
           <h1 style={{ fontSize: '2.25rem', fontWeight: '700', color: '#111111', letterSpacing: '-0.025em', margin: '0 0 0.5rem 0' }}>Gastitos</h1>
           <p style={{ fontSize: '1rem', color: '#565656', margin: 0, textAlign: 'center', lineHeight: '1.5' }}>
-            La forma más <strong>justa</strong> de dividir los gastos en pareja.<br />
-            Cuentas <strong>claras</strong>, <strong>proporcionales</strong> a lo que cada uno gana.
+            La forma más <strong>inteligente</strong> de dividir los gastos.<br />
+            Cuentas <strong>claras</strong>, en partes <strong>iguales</strong> o <strong>proporcionales</strong> a tu sueldo.
           </p>
         </div>
         <button

@@ -20,8 +20,13 @@ export const HelpModal = ({ isOpen, onClose }) => {
             Las salas son <strong>grupos cerrados</strong> donde podés registrar los ingresos y gastos compartidos con tu pareja o amigos.
           </div>
           <div>
-            <strong style={{ display: 'block', color: '#111', marginBottom: '0.25rem' }}>⚖️ División equitativa</strong>
-            Gastitos suma los sueldos del hogar y calcula <strong>cuánto aporta cada uno según lo que gana</strong>. Así, los gastos se dividen de forma justa: quien gana más, paga un poco más.          </div>
+            <strong style={{ display: 'block', color: '#111', marginBottom: '0.25rem' }}>⚖️ Modos de división</strong>
+            Gastitos te permite elegir cómo dividir los gastos:
+            <ul style={{ paddingLeft: '1.5rem', marginTop: '0.5rem', marginBottom: '0' }}>
+              <li style={{ marginBottom: '0.25rem' }}><strong>Equitativo:</strong> Suma los sueldos del hogar y calcula cuánto aporta cada uno según lo que gana (quien gana más, paga un poco más).</li>
+              <li><strong>50/50:</strong> Divide el total de los gastos exactamente en partes iguales entre todos los miembros de la sala.</li>
+            </ul>
+          </div>
           <div>
             <strong style={{ display: 'block', color: '#111', marginBottom: '0.25rem' }}>🔗 ¿Cómo invitar a alguien?</strong>
             Adentro de una sala, dale clic a <strong>Compartir</strong> para copiar el enlace y envíaselo por WhatsApp o redes. Cuando entren y se logueen, el creador deberá aceptar su solicitud en el Dashboard.
