@@ -3,13 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Trash2, Plus, Share2, LogOut, HelpCircle, Menu, X } from 'lucide-react';
+import { Trash2, Plus, Share2, LogOut, HelpCircle, Menu, X, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { HelpModal } from '../components/HelpModal';
 import { db } from '../config/firebase';
 import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import '../App.css';
-
 import '../App.css';
 
 const colorPalette = [
@@ -26,6 +24,22 @@ const getColor = (index) => colorPalette[index % colorPalette.length];
 const formatMoney = (value) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value || 0);
 const formatMoneyUSD = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value || 0);
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
+
+// Income helpers
+const getPersonIncomesList = (person) => {
+  if (Array.isArray(person?.incomes) && person.incomes.length > 0) {
+    return person.incomes;
+  }
+  if (person?.salary !== undefined && person?.salary !== '' && person?.salary !== null) {
+    return [{ id: 'default', name: 'Sueldo principal', amount: Number(person.salary) || 0 }];
+  }
+  return [];
+};
+
+const getPersonTotalIncome = (person) => {
+  const list = getPersonIncomesList(person);
+  return list.reduce((acc, item) => acc + (parseFloat(item.amount) || 0), 0);
+};
 
 export const RoomView = () => {
   const { id: roomId } = useParams();
@@ -47,6 +61,18 @@ export const RoomView = () => {
   const [roomName, setRoomName] = useState('');
   const [calculationMode, setCalculationMode] = useState('equitable');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Income items states per user
+  const [expandedPersons, setExpandedPersons] = useState({});
+  const [newIncomeName, setNewIncomeName] = useState({});
+  const [newIncomeAmount, setNewIncomeAmount] = useState({});
+
+  const toggleExpandPerson = (personId) => {
+    setExpandedPersons(prev => ({
+      ...prev,
+      [personId]: !prev[personId]
+    }));
+  };
 
   // Firestore Real-time Sync
   useEffect(() => {
@@ -130,7 +156,7 @@ export const RoomView = () => {
   }, [roomId, currentUser]);
 
   // Derived state (Calculations)
-  const totalIncome = useMemo(() => persons.reduce((acc, p) => acc + (parseFloat(p.salary) || 0), 0), [persons]);
+  const totalIncome = useMemo(() => persons.reduce((acc, p) => acc + getPersonTotalIncome(p), 0), [persons]);
   const totalExpenses = useMemo(() => expenses.reduce((acc, exp) => acc + exp.amount, 0), [expenses]);
 
   const personsWithPercent = useMemo(() => {
@@ -139,7 +165,7 @@ export const RoomView = () => {
       if (calculationMode === 'equal') {
         percent = 100 / (persons.length || 1);
       } else {
-        const salary = parseFloat(p.salary) || 0;
+        const salary = getPersonTotalIncome(p);
         percent = totalIncome > 0 ? (salary / totalIncome) * 100 : (100 / (persons.length || 1));
       }
       return {
@@ -162,7 +188,89 @@ export const RoomView = () => {
     }
   };
 
-  // Handlers
+  // Handlers for income items
+  const handleAddIncomeItem = (personId, name, amount) => {
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      toast.error('Ingrese un monto válido mayor a 0');
+      return;
+    }
+
+    const person = persons.find(p => p.id === personId);
+    if (!person) return;
+
+    const currentIncomes = getPersonIncomesList(person);
+    const newIncome = {
+      id: generateId(),
+      name: name.trim() || `Ingreso ${currentIncomes.length + 1}`,
+      amount: numericAmount
+    };
+
+    const updatedIncomes = [...currentIncomes, newIncome];
+    const updatedSalary = updatedIncomes.reduce((acc, inc) => acc + (parseFloat(inc.amount) || 0), 0);
+
+    const newPersons = persons.map(p => {
+      if (p.id !== personId) return p;
+      return {
+        ...p,
+        incomes: updatedIncomes,
+        salary: updatedSalary
+      };
+    });
+
+    setPersons(newPersons);
+    saveToDB(newPersons, null);
+
+    setNewIncomeName(prev => ({ ...prev, [personId]: '' }));
+    setNewIncomeAmount(prev => ({ ...prev, [personId]: '' }));
+    toast.success('Ingreso añadido');
+  };
+
+  const handleRemoveIncomeItem = (personId, incomeId) => {
+    const person = persons.find(p => p.id === personId);
+    if (!person) return;
+
+    const currentIncomes = getPersonIncomesList(person);
+    const updatedIncomes = currentIncomes.filter(inc => inc.id !== incomeId);
+    const updatedSalary = updatedIncomes.reduce((acc, inc) => acc + (parseFloat(inc.amount) || 0), 0);
+
+    const newPersons = persons.map(p => {
+      if (p.id !== personId) return p;
+      return {
+        ...p,
+        incomes: updatedIncomes,
+        salary: updatedSalary
+      };
+    });
+
+    setPersons(newPersons);
+    saveToDB(newPersons, null);
+  };
+
+  const handleUpdateIncomeItem = (personId, incomeId, field, value) => {
+    const person = persons.find(p => p.id === personId);
+    if (!person) return;
+
+    const currentIncomes = getPersonIncomesList(person);
+    const updatedIncomes = currentIncomes.map(inc => {
+      if (inc.id !== incomeId) return inc;
+      return { ...inc, [field]: value };
+    });
+    const updatedSalary = updatedIncomes.reduce((acc, inc) => acc + (parseFloat(inc.amount) || 0), 0);
+
+    const newPersons = persons.map(p => {
+      if (p.id !== personId) return p;
+      return {
+        ...p,
+        incomes: updatedIncomes,
+        salary: updatedSalary
+      };
+    });
+
+    setPersons(newPersons);
+    saveToDB(newPersons, null);
+  };
+
   const handleCalculationModeChange = async (mode) => {
     if (mode === calculationMode) return;
     setCalculationMode(mode);
@@ -175,9 +283,8 @@ export const RoomView = () => {
   };
 
   const handleAddPerson = () => {
-    // This is kept for manual additions if needed, but normally handled by joining
-    const newPersons = [...persons, { id: generateId(), name: `Persona ${persons.length + 1}`, salary: '', color: getColor(persons.length) }];
-    setPersons(newPersons); // Optimistic UI
+    const newPersons = [...persons, { id: generateId(), name: `Persona ${persons.length + 1}`, salary: '', incomes: [], color: getColor(persons.length) }];
+    setPersons(newPersons);
     saveToDB(newPersons, null);
   };
 
@@ -419,51 +526,162 @@ export const RoomView = () => {
 
           </div>
 
-          <div className="persons-list custom-scrollbar mt-4">
-            {personsWithPercent.map((person, index) => (
-              <div key={person.id} className="person-item animate-fade-in">
-                {person.photoURL ? (
-                  <img
-                    src={person.photoURL}
-                    alt={person.name}
-                    style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
-                    onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${person.name ? person.name.charAt(0) : 'U'}&background=random`; }}
-                  />
-                ) : (
-                  <div style={{ width: '32px', height: '32px' }}></div>
-                )}
-                <input
-                  type="text"
-                  className="name-input"
-                  value={person.name}
-                  onChange={(e) => handleUpdatePerson(person.id, 'name', e.target.value)}
-                  placeholder={`Persona ${index + 1}`}
-                  readOnly={!isCreator && currentUser?.uid !== person.id}
-                />
-                {calculationMode === 'equitable' && (
-                  <div className="input-wrapper amount-wrapper">
-                    <span className="currency-symbol">$</span>
-                    <input
-                      type="text"
-                      value={person.salary ? Number(person.salary).toLocaleString('es-AR') : ''}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, '');
-                        handleUpdatePerson(person.id, 'salary', val ? Number(val) : '');
-                      }}
-                      placeholder="Sueldo"
-                      readOnly={!isCreator && currentUser?.uid !== person.id}
-                    />
+          <div className="persons-list custom-scrollbar mt-4 flex flex-col gap-3">
+            {personsWithPercent.map((person, index) => {
+              const canEditPerson = isCreator || currentUser?.uid === person.id;
+              const isExpanded = !!expandedPersons[person.id];
+              const personIncomes = getPersonIncomesList(person);
+              const personTotal = getPersonTotalIncome(person);
+
+              return (
+                <div key={person.id} className="person-item-card">
+                  {/* Row 1: Avatar + Full width name input + Delete button */}
+                  <div className="person-header-row">
+                    <div className="person-user-info">
+                      {person.photoURL ? (
+                        <img
+                          src={person.photoURL}
+                          alt={person.name}
+                          style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                          onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${person.name ? person.name.charAt(0) : 'U'}&background=random`; }}
+                        />
+                      ) : (
+                        <img
+                          src={`https://ui-avatars.com/api/?name=${person.name ? person.name.charAt(0) : 'U'}&background=random`}
+                          alt={person.name}
+                          style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                        />
+                      )}
+                      <input
+                        type="text"
+                        className="name-input font-semibold text-sm text-gray-900"
+                        style={{ width: '100%', flex: 1 }}
+                        value={person.name}
+                        onChange={(e) => handleUpdatePerson(person.id, 'name', e.target.value)}
+                        placeholder={`Persona ${index + 1}`}
+                        readOnly={!canEditPerson}
+                      />
+                    </div>
+
+                    {isCreator && currentUser?.uid !== person.id && (
+                      <button className="btn-delete shrink-0" onClick={() => handleRemovePerson(person.id)} title="Eliminar persona">
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </div>
-                )}
-                {isCreator && currentUser?.uid !== person.id ? (
-                  <button className="btn-delete" onClick={() => handleRemovePerson(person.id)} title="Eliminar persona">
-                    <Trash2 size={18} />
-                  </button>
-                ) : (
-                  <div style={{ width: '24px' }}></div>
-                )}
-              </div>
-            ))}
+
+                  {/* Row 2: Full width Total Income toggle button */}
+                  {calculationMode === 'equitable' && (
+                    <button
+                      type="button"
+                      onClick={() => toggleExpandPerson(person.id)}
+                      className="income-toggle-btn"
+                      title="Desglosar ingresos de esta persona"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-gray-500 font-normal">Total:</span>
+                        <span className="font-semibold text-gray-900">{formatMoney(personTotal)}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-gray-500 text-xs">
+                        <span>{personIncomes.length} {personIncomes.length === 1 ? 'ítem' : 'ítems'}</span>
+                        <ChevronDown size={15} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                      </div>
+                    </button>
+                  )}
+
+                  {/* Desglose de Ingresos Desplegable */}
+                  {calculationMode === 'equitable' && isExpanded && (
+                    <div className="income-breakdown-box animate-fade-in">
+                      <div className="income-breakdown-header">
+                        <span>Ítems de ingreso ({personIncomes.length})</span>
+                      </div>
+
+                      {personIncomes.map((inc) => (
+                        <div key={inc.id} className="income-item-card">
+                          <input
+                            type="text"
+                            value={inc.name}
+                            onChange={(e) => canEditPerson && handleUpdateIncomeItem(person.id, inc.id, 'name', e.target.value)}
+                            placeholder="Concepto (Ej. Sueldo principal)"
+                            readOnly={!canEditPerson}
+                            className="income-input-full"
+                          />
+                          <div className="income-item-bottom-row">
+                            <div className="income-amount-box">
+                              <span className="income-amount-symbol">$</span>
+                              <input
+                                type="text"
+                                value={inc.amount ? Number(inc.amount).toLocaleString('es-AR') : ''}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/\D/g, '');
+                                  canEditPerson && handleUpdateIncomeItem(person.id, inc.id, 'amount', val ? Number(val) : 0);
+                                }}
+                                placeholder="0"
+                                readOnly={!canEditPerson}
+                              />
+                            </div>
+                            {canEditPerson && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveIncomeItem(person.id, inc.id)}
+                                className="btn-icon-subtle"
+                                title="Eliminar este ingreso"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      {canEditPerson && (
+                        <div className="income-item-card new-item-card">
+                          <input
+                            type="text"
+                            value={newIncomeName[person.id] || ''}
+                            onChange={(e) => setNewIncomeName(prev => ({ ...prev, [person.id]: e.target.value }))}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleAddIncomeItem(person.id, newIncomeName[person.id] || '', newIncomeAmount[person.id] || 0);
+                              }
+                            }}
+                            placeholder="Nuevo ingreso (Ej. Changa)"
+                            className="income-input-full"
+                          />
+                          <div className="income-item-bottom-row">
+                            <div className="income-amount-box">
+                              <span className="income-amount-symbol">$</span>
+                              <input
+                                type="text"
+                                value={newIncomeAmount[person.id] ? Number(newIncomeAmount[person.id]).toLocaleString('es-AR') : ''}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/\D/g, '');
+                                  setNewIncomeAmount(prev => ({ ...prev, [person.id]: val }));
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleAddIncomeItem(person.id, newIncomeName[person.id] || '', newIncomeAmount[person.id] || 0);
+                                  }
+                                }}
+                                placeholder="Monto"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleAddIncomeItem(person.id, newIncomeName[person.id] || '', newIncomeAmount[person.id] || 0)}
+                              className="btn-add-income-item"
+                              title="Agregar ingreso"
+                            >
+                              <Plus size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <div className="salary-stats mt-auto">
@@ -555,7 +773,7 @@ export const RoomView = () => {
           </div>
 
           <div className="results-grid custom-scrollbar flex-grow overflow-y-auto pr-2 mb-8 flex flex-col gap-6">
-            {totalExpenses === 0 || (calculationMode === 'equitable' && personsWithPercent.every(p => !p.salary)) ? (
+            {totalExpenses === 0 || (calculationMode === 'equitable' && personsWithPercent.every(p => getPersonTotalIncome(p) === 0)) ? (
               <div className="empty-state text-gray-700">Añade {calculationMode === 'equitable' ? 'sueldos y ' : ''}gastos para ver los resultados.</div>
             ) : (
               personsWithPercent.map(p => {
