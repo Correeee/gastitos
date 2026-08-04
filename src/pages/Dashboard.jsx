@@ -336,7 +336,19 @@ export const Dashboard = () => {
     }
   };
 
+  const getDefaultRoomName = () => {
+    const now = new Date();
+    const monthNames = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    const monthName = monthNames[now.getMonth()];
+    const year = now.getFullYear();
+    return `Gastos - ${monthName} ${year}`;
+  };
+
   const handleCreateRoom = () => {
+    const defaultName = getDefaultRoomName();
     toast((t) => (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0.5rem' }}>
         <p style={{ margin: 0, fontWeight: 500 }}>¿Cómo quieres llamar a esta sala?</p>
@@ -344,20 +356,20 @@ export const Dashboard = () => {
           id="new-room-input"
           className="custom-input"
           style={{ padding: '0.75rem', fontSize: '1rem', textTransform: 'none', letterSpacing: 'normal' }}
-          placeholder="Ej: Gastos - Marzo 2026"
-          maxLength={20}
+          defaultValue={defaultName}
+          placeholder={`Ej: ${defaultName}`}
+          maxLength={35}
           autoFocus
+          onFocus={(e) => e.target.select()}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
-              const val = e.target.value.trim();
-              if (val.length > 20) {
-                toast.error("El nombre no puede tener más de 30 caracteres", { id: 'too-long-name' });
+              const val = e.target.value.trim() || defaultName;
+              if (val.length > 35) {
+                toast.error("El nombre no puede tener más de 35 caracteres", { id: 'too-long-name' });
                 return;
               }
-              if (val) {
-                toast.dismiss(t.id);
-                createRoomWithName(val);
-              }
+              toast.dismiss(t.id);
+              createRoomWithName(val);
             }
           }}
         />
@@ -373,13 +385,10 @@ export const Dashboard = () => {
             variant="primary"
             style={{ padding: '0.5rem 1rem', width: 'auto' }}
             onClick={() => {
-              const val = document.getElementById('new-room-input')?.value.trim();
-              if (!val) {
-                toast.error("Coloca un nombre por favor", { id: 'empty-name' });
-                return;
-              }
-              if (val.length > 20) {
-                toast.error("El nombre no puede tener más de 20 caracteres", { id: 'too-long-name' });
+              const inputVal = document.getElementById('new-room-input')?.value.trim();
+              const val = inputVal || defaultName;
+              if (val.length > 35) {
+                toast.error("El nombre no puede tener más de 35 caracteres", { id: 'too-long-name' });
                 return;
               }
               toast.dismiss(t.id);
